@@ -258,8 +258,6 @@
         .btn-copy { background: white; color: var(--text-muted); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
         .btn-copy:hover { border-color: var(--primary); color: var(--primary); }
         .btn-primary { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
-
-        #dynamic-styles {}
     </style>
     <style id="dynamic-styles"></style>
 </head>
@@ -424,7 +422,7 @@
         let newProfilesAdded = false;
         foundProfiles.forEach(fp => {
             if (!profiles.find(p => p.name === fp)) {
-                const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+                const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
                 profiles.push({ name: fp, color: randomColor });
                 newProfilesAdded = true;
             }
