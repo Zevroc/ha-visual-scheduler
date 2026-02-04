@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thermostat Dashboard (Layout Mixte)</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --nav-height: 64px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column; /* Changement majeur ici */
+            overflow: hidden;
+        }
+
+        /* --- TOP NAVIGATION (HORIZONTAL) --- */
+        .top-nav {
+            height: var(--nav-height);
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 30px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .brand {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 20px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding-right: 20px;
+            margin-right: 20px;
+            border-right: 1px solid var(--border);
+        }
+        
+        .tool-group:last-child { border-right: none; }
+
+        .tool-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-right: 10px;
+        }
+
+        .btn-tool {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-tool:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            color: var(--primary);
+        }
+
+        .btn-tool.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .btn-tool.primary:hover { background: #4338ca; }
+
+        .file-status-badge {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border-radius: 20px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border);
+        }
+        
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+        .status-dot.loaded { background: #10b981; }
+
+        /* --- LAYOUT BODY --- */
+        .layout-body {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden; /* Empêche le scroll global */
+        }
+
+        /* --- SIDEBAR (VERTICAL - DAYS ONLY) --- */
+        .sidebar {
+            width: 240px;
+            background: #f9fafb;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-left: 10px;
+        }
+
+        .day-nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .day-nav-item:hover {
+            background-color: white;
+            color: var(--primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .day-nav-item.active {
+            background-color: white;
+            color: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .page-header {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        /* --- TABLE & CARD --- */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden; /* Important pour les coins arrondis */
+        }
+        
+        .schedule-container { overflow-x: auto; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        
+        th {
+            text-align: center;
+            padding: 15px;
+            background: #f9fafb;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid #f3f4f6;
+            white-space: nowrap;
+        }
+        th:first-child { text-align: left; padding-left: 20px; background: white; border-right: 1px solid var(--border); position: sticky; left: 0; z-index: 2; }
+        
+        td { padding: 10px; vertical-align: middle; border-bottom: 1px solid #f3f4f6; border-right: 1px solid #f9fafb; }
+        td:first-child { 
+            font-weight: 600; color: var(--text-main); padding-left: 20px; 
+            border-right: 1px solid var(--border);
+            position: sticky; left: 0; background: white; z-index: 1;
+        }
+        
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background-color: #fcfcfc; }
+        /* Fix pour le sticky hover */
+        tbody tr:hover td:first-child { background-color: #fcfcfc; }
+
+        /* UI ELEMENTS */
+        .time-badge { background: #eef2ff; color: var(--primary); padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; display: inline-block; margin-bottom: 6px; }
+        .slot-controls { display: flex; justify-content: center; gap: 4px; opacity: 0.4; transition: opacity 0.2s; }
+        th:hover .slot-controls { opacity: 1; }
+        
+        .mini-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border); background: white; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .mini-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .mini-btn.del:hover { background: #ef4444; border-color: #ef4444; }
+        
+        select { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-family: inherit; font-weight: 600; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; }
+        
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); }
+        .empty-icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.5; }
+        
+        /* Modal Lists */
+        .modal-list { max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; }
+        .modal-row { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); gap: 15px; }
+        .color-dot { width: 16px; height: 16px; border-radius: 50%; }
+        .modal-txt { flex: 1; text-align: left; font-weight: 600; font-family: monospace; }
+        
+        .btn-copy { background: white; color: var(--text-muted); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        .btn-copy:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-primary { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+    </style>
+    <style id="dynamic-styles"></style>
+</head>
+<body>
+
+    <!-- TOP NAVIGATION (HORIZONTAL) -->
+    <nav class="top-nav">
+        <div class="brand"><span>🔥</span> ThermoManager</div>
+        
+        <div class="toolbar">
+            <div class="tool-group">
+                <span class="tool-label">Fichier</span>
+                <button class="btn-tool" onclick="openFile()"><span>📂</span> Ouvrir</button>
+                <button class="btn-tool primary" onclick="saveFile()"><span>💾</span> Sauvegarder</button>
+            </div>
+            
+            <div class="tool-group">
+                <span class="tool-label">Configuration</span>
+                <button class="btn-tool" onclick="manageZones()"><span>🏠</span> Zones</button>
+                <button class="btn-tool" onclick="manageProfiles()"><span>⚙️</span> Catégories</button>
+            </div>
+        </div>
+
+        <div class="file-status-badge">
+            <span id="status-dot" class="status-dot"></span>
+            <span id="filename-text">Aucun fichier</span>
+        </div>
+    </nav>
+
+    <!-- LAYOUT BODY -->
+    <div class="layout-body">
+        
+        <!-- SIDEBAR (VERTICAL - DAYS) -->
+        <aside class="sidebar">
+            <div class="sidebar-title">Planning Hebdomadaire</div>
+            <div id="day-nav">
+                <!-- Items générés par JS -->
+                <div class="day-nav-item active">Lundi</div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content" id="content-area">
+            <div class="empty-state">
+                <div class="empty-icon">📂</div>
+                <h3>Prêt à commencer ?</h3>
+                <p>Ouvrez votre fichier schedule.yaml pour éditer le planning.</p>
+                <button class="btn-tool primary" style="margin-top: 20px;" onclick="openFile()">Ouvrir un fichier</button>
+            </div>
+        </main>
+
+    </div>
+
+    <input type="file" id="fileInput" style="display: none;" accept=".yaml,.yml">
+
+<script>
+    // --- VARIABLES ---
+    let scheduleData = null;
+    let currentFilename = 'schedule.yaml';
+    let activeDay = 'monday';
+    let fileHandle = null;
+    let detectedZones = []; 
+
+    let profiles = [
+        { name: 'comfort', color: '#f59e0b' },
+        { name: 'eco', color: '#06b6d4' },
+        { name: 'frost', color: '#6b7280' },
+        { name: 'eci', color: '#ec4899' }
+    ];
+
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const dayLabelsFr = {
+        'monday': 'Lundi', 'tuesday': 'Mardi', 'wednesday': 'Mercredi', 'thursday': 'Jeudi',
+        'friday': 'Vendredi', 'saturday': 'Samedi', 'sunday': 'Dimanche'
+    };
+
+    // --- INITIALISATION ---
+    initSidebar();
+    updateDynamicStyles();
+
+    function initSidebar() {
+        const navContainer = document.getElementById('day-nav');
+        navContainer.innerHTML = '';
+        days.forEach(day => {
+            const div = document.createElement('div');
+            div.className = `day-nav-item ${day === activeDay ? 'active' : ''}`;
+            div.innerHTML = `<span>📅</span> ${dayLabelsFr[day]}`;
+            div.onclick = () => switchDay(day);
+            navContainer.appendChild(div);
+        });
+    }
+
+    function switchDay(day) {
+        if (!scheduleData) return;
+        activeDay = day;
+        document.querySelectorAll('#day-nav .day-nav-item').forEach((el, idx) => {
+            if (days[idx] === day) el.classList.add('active'); else el.classList.remove('active');
+        });
+        render();
+    }
+
+    function updateDynamicStyles() {
+        const styleEl = document.getElementById('dynamic-styles');
+        let css = '';
+        profiles.forEach(p => {
+            css += `
+                select.${p.name} {
+                    background-color: ${p.color}15;
+                    border-color: ${p.color}40;
+                    color: ${p.color};
+                }
+                option[value="${p.name}"] { color: ${p.color}; font-weight: bold; }
+            `;
+        });
+        styleEl.innerHTML = css;
+    }
+
+    // --- LOGIQUE: PARSING & DETECTION ---
+    function parseYAML(text) {
+        const lines = text.split('\n');
+        const result = { thermostat_schedule: {} };
+        let curDay = null, curSlot = null;
+        
+        const foundProfiles = new Set();
+        const foundZones = new Set(); 
+
+        lines.forEach(line => {
+            const t = line.trim();
+            if (!t || t.startsWith('#')) return;
+            
+            if (t.includes('name:')) {
+                result.thermostat_schedule.name = t.split('name:')[1].trim().replace(/["']/g, '');
+            } else if (t.match(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday):/)) {
+                if (curSlot && curDay) result.thermostat_schedule[curDay].push(curSlot);
+                curDay = t.replace(':', '');
+                result.thermostat_schedule[curDay] = [];
+                curSlot = null;
+            } else if (t.startsWith('- from:')) {
+                if (curSlot && curDay) result.thermostat_schedule[curDay].push(curSlot);
+                curSlot = { data: {}, from: t.split('from:')[1].trim().replace(/["']/g, '') };
+            } else if (t.startsWith('to:') && curSlot) {
+                curSlot.to = t.split('to:')[1].trim().replace(/["']/g, '');
+            } else if (curSlot && t.includes(':') && t !== 'data:') {
+                const p = t.split(':');
+                if (p.length >= 2) {
+                    const key = p[0].trim();
+                    const val = p[1].trim().replace(/["']/g, '');
+                    curSlot.data[key] = val;
+                    
+                    if (key !== 'id_t') {
+                        foundZones.add(key);
+                        foundProfiles.add(val);
+                    }
+                }
+            }
+        });
+        if (curSlot && curDay) result.thermostat_schedule[curDay].push(curSlot);
+
+        detectedZones = Array.from(foundZones);
+        if (detectedZones.length === 0) detectedZones = ['maison']; // Default fallback
+
+        let newProfilesAdded = false;
+        foundProfiles.forEach(fp => {
+            if (!profiles.find(p => p.name === fp)) {
+                const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                profiles.push({ name: fp, color: randomColor });
+                newProfilesAdded = true;
+            }
+        });
+        if (newProfilesAdded) updateDynamicStyles();
+
+        return result;
+    }
+
+    // --- GESTION DES ZONES ---
+    async function manageZones() {
+        if (!scheduleData) return Swal.fire('Info', 'Ouvrez d\'abord un fichier', 'info');
+
+        const listHtml = detectedZones.map((z, idx) => `
+            <div class="modal-row">
+                <div class="modal-txt">${z}</div>
+                <div class="mini-btn" onclick="renameZone(${idx})">✏️</div>
+                <div class="mini-btn del" onclick="deleteZone(${idx})">🗑️</div>
+            </div>
+        `).join('');
+
+        await Swal.fire({
+            title: 'Gérer les Zones',
+            html: `<div class="modal-list">${listHtml}</div><button class="btn-primary" style="width:100%" onclick="addZone()">+ Nouvelle Zone</button>`,
+            showConfirmButton: false, showCloseButton: true
+        });
+    }
+
+    async function addZone() {
+        const { value: name } = await Swal.fire({ title: 'Nouvelle zone', input: 'text', inputPlaceholder: 'ex: cuisine', showCancelButton: true });
+        if (name) {
+            const cleanName = name.trim().replace(/\s+/g, '_').toLowerCase();
+            if (detectedZones.includes(cleanName)) return Swal.fire('Erreur', 'Existe déjà', 'error');
+            detectedZones.push(cleanName);
+            days.forEach(day => { if(scheduleData.thermostat_schedule[day]) scheduleData.thermostat_schedule[day].forEach(s => s.data[cleanName] = profiles[0].name); });
+            render(); manageZones();
+        }
+    }
+
+    async function deleteZone(idx) {
+        if (detectedZones.length <= 1) return Swal.fire('Erreur', 'Il faut au moins une zone', 'error');
+        const z = detectedZones[idx];
+        const { isConfirmed } = await Swal.fire({ title: 'Supprimer ?', text: z, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+        if (isConfirmed) {
+            detectedZones.splice(idx, 1);
+            days.forEach(day => { if(scheduleData.thermostat_schedule[day]) scheduleData.thermostat_schedule[day].forEach(s => delete s.data[z]); });
+            render(); manageZones();
+        }
+    }
+
+    async function renameZone(idx) {
+        const oldName = detectedZones[idx];
+        const { value: newName } = await Swal.fire({ title: 'Renommer', input: 'text', inputValue: oldName, showCancelButton: true });
+        if (newName && newName !== oldName) {
+            const clean = newName.trim().replace(/\s+/g, '_').toLowerCase();
+            if (detectedZones.includes(clean)) return Swal.fire('Erreur', 'Existe déjà', 'error');
+            detectedZones[idx] = clean;
+            days.forEach(day => {
+                if (scheduleData.thermostat_schedule[day]) scheduleData.thermostat_schedule[day].forEach(s => { s.data[clean] = s.data[oldName]; delete s.data[oldName]; });
+            });
+            render(); manageZones();
+        }
+    }
+
+    // --- RENDU ---
+    function render() {
+        const container = document.getElementById('content-area');
+        if (!scheduleData) return;
+
+        const dayData = scheduleData.thermostat_schedule[activeDay];
+        
+        let html = `
+        <div class="page-header">
+            <h2 class="page-title">${dayLabelsFr[activeDay]}</h2>
+            <button class="btn-copy" onclick="copyDay('${activeDay}')">📋 Copier ce jour</button>
+        </div>
+        
+        <div class="card"><div class="schedule-container"><table><thead><tr><th>Zones</th>`;
+
+        // Headers
+        dayData.forEach((slot, idx) => {
+            const fromShort = slot.from.substring(0,5);
+            const toShort = slot.to.substring(0,5);
+            html += `
+            <th>
+                <span class="time-badge">${fromShort} - ${toShort}</span>
+                <div class="slot-controls">
+                    <div class="mini-btn" onclick="editTime('${activeDay}', ${idx})" title="Temps">⏱️</div>
+                    <div class="mini-btn" onclick="splitSlot('${activeDay}', ${idx})" title="Couper">✂️</div>
+                    ${dayData.length > 1 ? `<div class="mini-btn del" onclick="deleteSlot('${activeDay}', ${idx})" title="Suppr">🗑️</div>` : ''}
+                </div>
+            </th>`;
+        });
+        html += `</tr></thead><tbody>`;
+
+        // Rows
+        detectedZones.forEach(zone => {
+            const zoneLabel = zone.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            html += `<tr><td>${zoneLabel}</td>`;
+            dayData.forEach((slot, idx) => {
+                const val = slot.data[zone] || profiles[0].name;
+                html += `<td>
+                    <select class="${val}" onchange="updateData('${activeDay}', ${idx}, '${zone}', this.value, this)">
+                        ${profiles.map(p => `<option value="${p.name}" ${val===p.name?'selected':''}>${p.name.charAt(0).toUpperCase()+p.name.slice(1)}</option>`).join('')}
+                    </select>
+                </td>`;
+            });
+            html += `</tr>`;
+        });
+
+        html += `</tbody></table></div></div>`;
+        container.innerHTML = html;
+    }
+
+    // --- FILE I/O ---
+    async function openFile() {
+        if ('showOpenFilePicker' in window) {
+            try {
+                const [handle] = await window.showOpenFilePicker({ types: [{ description: 'YAML', accept: { 'text/yaml': ['.yaml', '.yml'] } }], multiple: false });
+                fileHandle = handle;
+                const file = await fileHandle.getFile();
+                processFileContent(await file.text(), file.name, true);
+            } catch (err) { if (err.name !== 'AbortError') document.getElementById('fileInput').click(); }
+        } else { document.getElementById('fileInput').click(); }
+    }
+
+    document.getElementById('fileInput').addEventListener('change', e => {
+        const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = ev => processFileContent(ev.target.result, f.name, false); r.readAsText(f); }
+    });
+
+    function processFileContent(text, name, isNative) {
+        try {
+            scheduleData = parseYAML(text);
+            currentFilename = name;
+            document.getElementById('filename-text').textContent = name;
+            document.getElementById('status-dot').classList.add('loaded');
+            switchDay('monday');
+            Swal.fire({ icon: 'success', title: 'Chargé', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        } catch (err) { console.error(err); Swal.fire('Erreur', 'Fichier invalide', 'error'); }
+    }
+
+    function generateYAML(data) {
+        let yaml = `thermostat_schedule:\n    name: "${data.thermostat_schedule.name}"\n`;
+        days.forEach(day => {
+            if (!data.thermostat_schedule[day]) return;
+            yaml += `    ${day}:\n`;
+            data.thermostat_schedule[day].forEach(slot => {
+                yaml += `      - from: "${slot.from}"\n        to: "${slot.to}"\n        data:\n`;
+                if(slot.data.id_t) yaml += `          id_t: "${slot.data.id_t}"\n`;
+                detectedZones.forEach(zone => { if(slot.data[zone]) yaml += `          ${zone}: "${slot.data[zone]}"\n`; });
+            });
+        });
+        return yaml;
+    }
+
+    async function saveFile() {
+        if (!scheduleData) return;
+        const yamlContent = generateYAML(scheduleData);
+        if (fileHandle) {
+            try {
+                const writable = await fileHandle.createWritable();
+                await writable.write(yamlContent);
+                await writable.close();
+                Swal.fire({ icon: 'success', title: 'Sauvegardé', timer: 1500, showConfirmButton: false });
+            } catch (err) { downloadFallback(yamlContent); }
+        } else { downloadFallback(yamlContent); }
+    }
+
+    function downloadFallback(content) {
+        const blob = new Blob([content], { type: 'text/yaml' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = currentFilename; a.click();
+    }
+
+    // --- ACTIONS ---
+    function updateData(day, idx, zone, val, elem) { scheduleData.thermostat_schedule[day][idx].data[zone] = val; elem.className = val; }
+
+    async function editTime(day, idx) {
+        const slots = scheduleData.thermostat_schedule[day];
+        const slot = slots[idx];
+        const { value: newTime } = await Swal.fire({ title: 'Heure de fin', input: 'time', inputValue: slot.to.substring(0,5), showCancelButton: true });
+        if (newTime) {
+            if (newTime <= slot.from.substring(0,5)) return Swal.fire('Erreur', 'Fin < Début', 'error');
+            const full = newTime + ":00";
+            slot.to = full;
+            if (idx < slots.length - 1) slots[idx+1].from = full;
+            render();
+        }
+    }
+
+    async function splitSlot(day, idx) {
+        const slots = scheduleData.thermostat_schedule[day];
+        const slot = slots[idx];
+        const { value: t } = await Swal.fire({ title: 'Couper à ?', input: 'time', showCancelButton: true });
+        if (t) {
+            const full = t + ":00";
+            if (full <= slot.from || full >= slot.to) return Swal.fire('Erreur', 'Hors créneau', 'error');
+            const newS = JSON.parse(JSON.stringify(slot));
+            newS.from = full; newS.data.id_t = Date.now().toString();
+            slot.to = full;
+            slots.splice(idx+1, 0, newS);
+            render();
+        }
+    }
+
+    function deleteSlot(day, idx) {
+        const slots = scheduleData.thermostat_schedule[day];
+        Swal.fire({ title: 'Supprimer ?', showCancelButton: true, confirmButtonColor: '#ef4444' }).then(r => {
+            if(r.isConfirmed) {
+                if(idx > 0) slots[idx-1].to = slots[idx].to; else slots[idx+1].from = "00:00:00";
+                slots.splice(idx, 1);
+                render();
+            }
+        });
+    }
+
+    // --- GESTION PROFILS ---
+    async function manageProfiles() {
+        const listHtml = profiles.map((p, idx) => `<div class="modal-row"><div class="color-dot" style="background:${p.color}"></div><div class="modal-txt">${p.name}</div><div class="mini-btn" onclick="editProfile(${idx})">✏️</div><div class="mini-btn del" onclick="deleteProfile(${idx})">🗑️</div></div>`).join('');
+        await Swal.fire({ title: 'Catégories', html: `<div class="modal-list">${listHtml}</div><button class="btn-primary" style="width:100%" onclick="addProfile()">+ Ajouter</button>`, showConfirmButton: false, showCloseButton: true });
+    }
+
+    async function addProfile() {
+        const { value: v } = await Swal.fire({ title: 'Nouveau', html: '<input id="n" class="swal2-input" placeholder="Nom"><input type="color" id="c" class="swal2-input" style="height:50px">', preConfirm: () => [document.getElementById('n').value, document.getElementById('c').value] });
+        if (v && v[0]) { profiles.push({ name: v[0], color: v[1] }); updateDynamicStyles(); render(); manageProfiles(); }
+    }
+
+    async function editProfile(idx) {
+        const p = profiles[idx];
+        const { value: v } = await Swal.fire({ title: 'Modifier', html: `<input id="n" class="swal2-input" value="${p.name}"><input type="color" id="c" class="swal2-input" style="height:50px" value="${p.color}">`, preConfirm: () => [document.getElementById('n').value, document.getElementById('c').value] });
+        if (v && v[0]) { profiles[idx] = { name: v[0], color: v[1] }; updateDynamicStyles(); render(); manageProfiles(); }
+    }
+
+    async function deleteProfile(idx) {
+        if (profiles.length <= 1) return Swal.fire('Erreur', 'Min 1 catégorie', 'error');
+        if ((await Swal.fire({ title: 'Supprimer ?', showCancelButton: true, confirmButtonColor: '#ef4444' })).isConfirmed) { profiles.splice(idx, 1); updateDynamicStyles(); render(); manageProfiles(); }
+    }
+
+    async function copyDay(src) {
+        let h = '<div style="text-align:left;display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+        days.forEach(d => { if(d !== src) h += `<label style="cursor:pointer;padding:5px;"><input type="checkbox" value="${d}" class="chk"> ${dayLabelsFr[d]}</label>`; });
+        h += '</div>';
+        const { isConfirmed } = await Swal.fire({ title: `Copier ${dayLabelsFr[src]} vers...`, html: h, showCancelButton: true, confirmButtonText: 'Appliquer', preConfirm: () => Array.from(document.querySelectorAll('.chk:checked')).map(c => c.value) });
+        if (isConfirmed) {
+            const targets = Array.from(document.querySelectorAll('.chk:checked')).map(c => c.value);
+            const srcData = scheduleData.thermostat_schedule[src];
+            targets.forEach(t => scheduleData.thermostat_schedule[t] = JSON.parse(JSON.stringify(srcData)));
+            render();
+            Swal.fire({ icon: 'success', title: 'Copié', timer: 1500, showConfirmButton: false });
+        }
+    }
+</script>
+</body>
+</html>
